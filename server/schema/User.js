@@ -1,0 +1,43 @@
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const Schema = mongoose.Schema;
+const saltRounds = 10;
+
+const UserSchema = new Schema({
+    name: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    password: {
+        type: String,
+        required: true
+    }
+});
+
+UserSchema.pre('save', function (next) {
+    const user = this;
+    bcrypt.hash(user.password, saltRounds,
+        function (err, hash) {
+            if (err) {
+                next(err);
+            } else {
+                user.password = hash;
+                next();
+            }
+        }
+    )
+})
+
+UserSchema.methods.isCorrectPassword = function (password, callback) {
+    bcrypt.compare(password, this.password, function (err, same) {
+        if (err) {
+            callback(err);
+        } else {
+            callback(err, same);
+        }
+    });
+}
+
+const User = mongoose.model('User', UserSchema);
+module.exports = User;
